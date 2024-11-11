@@ -162,8 +162,17 @@ function(params) (import 'github.com/kubernetes/kube-state-metrics/jsonnet/kube-
           automountServiceAccountToken: true,
           containers: std.map(function(c) c {
             ports:: null,
-            livenessProbe:: null,
-            readinessProbe:: null,
+            livenessProbe: { timeoutSeconds: 5, initialDelaySeconds: 5, httpGet: {
+              port: 'http-metrics',
+              path: '/livez',
+            } },
+            readinessProbe: { timeoutSeconds: 5, initialDelaySeconds: 5, httpGet: {
+              port: 'telemetry',
+              path: '/readyz',
+            } },
+            securityContext+: {
+              runAsGroup: 65534,
+            },
             args: ['--host=127.0.0.1', '--port=8081', '--telemetry-host=127.0.0.1', '--telemetry-port=8082'],
             resources: ksm._config.resources,
           }, super.containers) + [kubeRbacProxyMain, kubeRbacProxySelf],
